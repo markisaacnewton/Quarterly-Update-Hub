@@ -1,0 +1,1981 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Policy Email Automation Hub</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome 6 Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Inter Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- SheetJS CDN for Excel parsing -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #f8fafc;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+    .badge-pending { background-color: #fef3c7; color: #92400e; }
+    .badge-sent { background-color: #d1fae5; color: #065f46; }
+    .badge-failed { background-color: #fee2e2; color: #991b1b; }
+  </style>
+</head>
+<body class="text-slate-800 antialiased flex flex-col min-h-screen">
+
+  <!-- Main Container -->
+  <div class="flex h-screen overflow-hidden">
+
+    <!-- Sidebar Navigation -->
+    <aside class="w-64 bg-slate-900 text-slate-300 flex flex-col justify-between shadow-xl flex-shrink-0 z-20">
+      <div>
+        <!-- Brand Header -->
+        <div class="p-5 border-b border-slate-800 flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-700 to-indigo-500 flex items-center justify-center text-white shadow-lg font-bold text-xl">
+            <i class="fa-solid fa-paper-plane"></i>
+          </div>
+          <div>
+            <h1 class="font-bold text-white text-base tracking-tight leading-none">PolicyMail Pro</h1>
+            <span class="text-xs text-blue-400 font-medium">Quarterly Email Hub</span>
+          </div>
+        </div>
+
+        <!-- Consultant Info Card -->
+        <div class="m-4 p-3 bg-slate-800/60 rounded-xl border border-slate-700/50 flex items-center space-x-3 shadow-inner">
+          <div class="w-9 h-9 rounded-full bg-blue-900 text-blue-200 flex items-center justify-center font-bold text-xs">
+            MI
+          </div>
+          <div class="overflow-hidden">
+            <p class="text-xs font-semibold text-white truncate">Mark Isaac Ison</p>
+            <p class="text-[11px] text-slate-400 truncate">Financial Consultant</p>
+          </div>
+        </div>
+
+        <!-- Navigation Links -->
+        <nav class="mt-2 px-3 space-y-1.5">
+          <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-btn w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all bg-blue-600 text-white shadow-md">
+            <i class="fa-solid fa-chart-pie w-5 text-center"></i>
+            <span>Dashboard</span>
+          </button>
+          
+          <button onclick="switchTab('clients')" id="nav-clients" class="nav-btn w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all hover:bg-slate-800 hover:text-white text-slate-400">
+            <i class="fa-solid fa-users w-5 text-center"></i>
+            <span>Policy Data List</span>
+            <span id="nav-client-count" class="ml-auto bg-slate-800 text-xs text-slate-300 px-2 py-0.5 rounded-full">0</span>
+          </button>
+
+          <button onclick="switchTab('template')" id="nav-template" class="nav-btn w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all hover:bg-slate-800 hover:text-white text-slate-400">
+            <i class="fa-solid fa-envelope-open-text w-5 text-center"></i>
+            <span>Template & Preview</span>
+          </button>
+
+          <button onclick="switchTab('send')" id="nav-send" class="nav-btn w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all hover:bg-slate-800 hover:text-white text-slate-400">
+            <i class="fa-solid fa-paper-plane w-5 text-center"></i>
+            <span>Send Portal</span>
+          </button>
+
+          <button onclick="switchTab('settings')" id="nav-settings" class="nav-btn w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all hover:bg-slate-800 hover:text-white text-slate-400">
+            <i class="fa-solid fa-gear w-5 text-center text-emerald-400"></i>
+            <span>Gmail Settings</span>
+            <span id="nav-conn-status" class="w-2 h-2 rounded-full bg-rose-500 ml-auto" title="Not Connected"></span>
+          </button>
+
+          <button onclick="switchTab('gas')" id="nav-gas" class="nav-btn w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all hover:bg-slate-800 hover:text-white text-slate-400">
+            <i class="fa-solid fa-code w-5 text-center text-amber-400"></i>
+            <span class="text-amber-300">Google Apps Script</span>
+          </button>
+        </nav>
+      </div>
+
+      <!-- Footer Info -->
+      <div class="p-4 border-t border-slate-800 text-xs text-slate-500">
+        <p class="flex items-center space-x-1.5">
+          <i class="fa-solid fa-shield-halved text-emerald-500"></i>
+          <span>Gmail Integration System</span>
+        </p>
+        <p class="mt-1 text-[10px] text-slate-600">v3.2 Multi-PDF Upload & Preview Fixed</p>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 flex flex-col min-w-0 overflow-hidden bg-slate-50">
+
+      <!-- Top Header -->
+      <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 z-10 shadow-sm">
+        <div class="flex items-center space-x-3">
+          <h2 id="page-title" class="text-xl font-bold text-slate-900 tracking-tight">Dashboard Overview</h2>
+        </div>
+
+        <!-- Quick Actions Top Bar -->
+        <div class="flex items-center space-x-3">
+          <div id="conn-banner-status" onclick="switchTab('settings')" class="cursor-pointer px-3.5 py-1.5 rounded-xl text-xs font-semibold border flex items-center space-x-2 bg-slate-100 border-slate-200 text-slate-600 hover:bg-slate-200 transition-colors shadow-sm">
+            <span class="w-2 h-2 rounded-full bg-rose-500"></span>
+            <span>Gmail API: Not Connected</span>
+          </div>
+
+          <button onclick="switchTab('send')" class="px-4 py-2 bg-blue-900 hover:bg-blue-800 text-white text-xs font-semibold rounded-xl shadow-md transition-all flex items-center space-x-2">
+            <i class="fa-solid fa-paper-plane"></i>
+            <span>Open Send Portal</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Dynamic Tab Content Views -->
+      <div class="flex-1 overflow-y-auto custom-scrollbar p-8">
+
+        <!-- Tab 1: Dashboard View -->
+        <div id="tab-dashboard" class="tab-content space-y-6">
+          
+          <!-- Summary Cards Row -->
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between hover:shadow-md transition-shadow">
+              <div>
+                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Policies</p>
+                <h3 id="stat-total" class="text-3xl font-extrabold text-slate-900 mt-1">0</h3>
+                <p class="text-xs text-slate-500 mt-1 font-medium">In active batch</p>
+              </div>
+              <div class="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center text-2xl shadow-inner">
+                <i class="fa-solid fa-users"></i>
+              </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between hover:shadow-md transition-shadow">
+              <div>
+                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Pending Email</p>
+                <h3 id="stat-pending" class="text-3xl font-extrabold text-amber-600 mt-1">0</h3>
+                <p class="text-xs text-slate-500 mt-1 font-medium">Ready to dispatch</p>
+              </div>
+              <div class="w-14 h-14 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center text-2xl shadow-inner">
+                <i class="fa-solid fa-clock"></i>
+              </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between hover:shadow-md transition-shadow">
+              <div>
+                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Successfully Sent</p>
+                <h3 id="stat-sent" class="text-3xl font-extrabold text-emerald-600 mt-1">0</h3>
+                <p class="text-xs text-slate-500 mt-1 font-medium">Delivered via Gmail</p>
+              </div>
+              <div class="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-2xl shadow-inner">
+                <i class="fa-solid fa-circle-check"></i>
+              </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between hover:shadow-md transition-shadow">
+              <div>
+                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Failed / Errors</p>
+                <h3 id="stat-failed" class="text-3xl font-extrabold text-rose-600 mt-1">0</h3>
+                <p class="text-xs text-slate-500 mt-1 font-medium">Needs verification</p>
+              </div>
+              <div class="w-14 h-14 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center text-2xl shadow-inner">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+              </div>
+            </div>
+          </div>
+
+          <!-- File Upload Banner Zone -->
+          <div id="drop-zone" class="border-2 border-dashed border-blue-300 bg-blue-50/40 hover:bg-blue-50/80 rounded-2xl p-10 text-center transition-all cursor-pointer relative group shadow-sm" onclick="triggerFileUpload()">
+            <input type="file" id="excel-file-input" class="hidden" accept=".xlsx, .xls, .csv" onchange="handleFileSelect(event)">
+            <div class="max-w-lg mx-auto space-y-3">
+              <div class="w-16 h-16 bg-white shadow-md text-blue-700 rounded-2xl flex items-center justify-center mx-auto text-2xl group-hover:scale-110 transition-transform">
+                <i class="fa-solid fa-cloud-arrow-up"></i>
+              </div>
+              <div>
+                <h4 class="text-base font-bold text-slate-900">Import Excel / CSV Policy Sheet</h4>
+                <p class="text-xs text-slate-500 mt-1">Drag and drop your spreadsheet here or click anywhere to browse files</p>
+              </div>
+              <div class="flex items-center justify-center space-x-2 text-xs text-slate-400 font-medium pt-1">
+                <span class="px-2.5 py-1 bg-white rounded-lg border border-slate-200 shadow-sm">.XLSX</span>
+                <span class="px-2.5 py-1 bg-white rounded-lg border border-slate-200 shadow-sm">.CSV</span>
+                <span class="text-slate-500 font-semibold">(Supported: Policy Owner, Policy Insured, Email Address, Policy Number, etc.)</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Overview & Recent Activity Grid -->
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            <!-- Quick Client Preview Table -->
+            <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 space-y-4">
+              <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h4 class="text-sm font-bold text-slate-900 flex items-center space-x-2">
+                  <i class="fa-solid fa-list-check text-blue-600"></i>
+                  <span>Recent Policy Queue Preview</span>
+                </h4>
+                <button onclick="switchTab('clients')" class="text-xs font-semibold text-blue-700 hover:text-blue-900">
+                  View All Records &rarr;
+                </button>
+              </div>
+
+              <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                  <thead>
+                    <tr class="text-[11px] font-bold text-slate-400 uppercase border-b border-slate-100">
+                      <th class="pb-3">Policy Owner & Insured</th>
+                      <th class="pb-3">Policy & Plan</th>
+                      <th class="pb-3">Premium & Due</th>
+                      <th class="pb-3 text-right">Delivery Status</th>
+                    </tr>
+                  </thead>
+                  <tbody id="dashboard-recent-table" class="divide-y divide-slate-100 text-xs">
+                    <!-- Populated dynamically -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Workflow Quick Guide -->
+            <div class="bg-slate-900 text-white rounded-2xl p-6 shadow-md flex flex-col justify-between space-y-4">
+              <div>
+                <div class="flex items-center space-x-2 text-amber-400 text-xs font-semibold tracking-wider uppercase">
+                  <i class="fa-solid fa-wand-magic-sparkles"></i>
+                  <span>Quick Setup Guide</span>
+                </div>
+                <h4 class="text-base font-bold text-white mt-1">Live Email Dispatch</h4>
+
+                <ol class="mt-4 space-y-3.5 text-xs text-slate-300">
+                  <li class="flex items-start space-x-3">
+                    <span class="w-5 h-5 rounded-full bg-slate-800 text-blue-400 font-bold flex items-center justify-center text-[10px] shrink-0 mt-0.5 shadow-sm">1</span>
+                    <span><strong>Deploy Script:</strong> Copy code from Google Apps Script tab to your Google Drive and deploy.</span>
+                  </li>
+                  <li class="flex items-start space-x-3">
+                    <span class="w-5 h-5 rounded-full bg-slate-800 text-blue-400 font-bold flex items-center justify-center text-[10px] shrink-0 mt-0.5 shadow-sm">2</span>
+                    <span><strong>Save Web App URL:</strong> Paste deployed URL in <strong>Gmail Settings (⚙️)</strong>.</span>
+                  </li>
+                  <li class="flex items-start space-x-3">
+                    <span class="w-5 h-5 rounded-full bg-slate-800 text-blue-400 font-bold flex items-center justify-center text-[10px] shrink-0 mt-0.5 shadow-sm">3</span>
+                    <span><strong>PDF Attachment:</strong> Upload PDF files in Template tab (Up to 5MB each).</span>
+                  </li>
+                  <li class="flex items-start space-x-3">
+                    <span class="w-5 h-5 rounded-full bg-slate-800 text-blue-400 font-bold flex items-center justify-center text-[10px] shrink-0 mt-0.5 shadow-sm">4</span>
+                    <span><strong>Batch Dispatch:</strong> Send customized policy emails straight to Policy Owners!</span>
+                  </li>
+                </ol>
+              </div>
+
+              <button onclick="switchTab('gas')" class="w-full py-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-bold text-xs rounded-xl shadow-md transition-all flex items-center justify-center space-x-2">
+                <i class="fa-solid fa-code"></i>
+                <span>Get Google Apps Script Code</span>
+              </button>
+            </div>
+
+          </div>
+
+        </div>
+
+        <!-- Tab 2: Client/Policy Management View -->
+        <div id="tab-clients" class="tab-content hidden space-y-6">
+          
+          <!-- Table Controls Toolbar -->
+          <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
+            
+            <div class="flex items-center space-x-3 w-full md:w-auto">
+              <!-- Search Input -->
+              <div class="relative flex-1 md:w-80">
+                <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                <input type="text" id="client-search-input" onkeyup="filterClients()" placeholder="Search Owner, Insured, Email, Policy No, Plan..." class="w-full pl-10 pr-4 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600 font-medium">
+              </div>
+
+              <!-- Filter Dropdown -->
+              <select id="status-filter" onchange="filterClients()" class="text-xs bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-600 font-medium">
+                <option value="ALL">All Statuses</option>
+                <option value="Pending">Pending</option>
+                <option value="Sent">Sent</option>
+                <option value="Failed">Failed</option>
+              </select>
+            </div>
+
+            <!-- Table Actions -->
+            <div class="flex items-center space-x-2.5 w-full md:w-auto justify-end">
+              <button onclick="openAddClientModal()" class="px-4 py-2.5 bg-blue-900 hover:bg-blue-800 text-white text-xs font-semibold rounded-xl shadow-md transition-all flex items-center space-x-2">
+                <i class="fa-solid fa-plus"></i>
+                <span>Add Record</span>
+              </button>
+
+              <button onclick="resetClientData()" class="px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl transition-colors flex items-center space-x-2 shadow-sm" title="Reload sample data">
+                <i class="fa-solid fa-rotate-left"></i>
+                <span>Reload Sample</span>
+              </button>
+
+              <button onclick="clearAllClients()" class="px-3.5 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-semibold rounded-xl transition-colors flex items-center space-x-2 shadow-sm">
+                <i class="fa-solid fa-trash-can"></i>
+                <span>Clear All</span>
+              </button>
+            </div>
+
+          </div>
+
+          <!-- Main Clients Table -->
+          <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse">
+                <thead>
+                  <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                    <th class="p-4 pl-6">
+                      <input type="checkbox" id="select-all-checkbox" onchange="toggleSelectAllClients(this)" class="rounded text-blue-600 focus:ring-blue-500 w-4 h-4">
+                    </th>
+                    <th class="p-4">Policy Owner & Insured</th>
+                    <th class="p-4">Email Address</th>
+                    <th class="p-4">Policy No. & Plan Type</th>
+                    <th class="p-4">Premium & Billing</th>
+                    <th class="p-4">Due Date & Method</th>
+                    <th class="p-4">Fund Value & Type</th>
+                    <th class="p-4">Status</th>
+                    <th class="p-4 pr-6 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="clients-table-body" class="divide-y divide-slate-100 text-xs">
+                  <!-- Dynamic Client Rows -->
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Table Footer Summary -->
+            <div class="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-xs text-slate-500">
+              <span id="client-table-summary" class="font-medium">Showing 0 of 0 records</span>
+              <span class="text-[11px] text-slate-400">Fields matching Excel schema: Policy Owner, Policy Insured, Email, Policy No., Plan Type, etc.</span>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Tab 3: Template Editor & Live Preview -->
+        <div id="tab-template" class="tab-content hidden space-y-6">
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            
+            <!-- Left Panel: Template Controls -->
+            <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-5">
+              <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h3 class="text-sm font-bold text-slate-900 flex items-center space-x-2">
+                  <i class="fa-solid fa-pen-to-square text-blue-600"></i>
+                  <span>Email Template & PDF Attachment</span>
+                </h3>
+                <span class="text-[11px] bg-blue-50 text-blue-700 px-2.5 py-1 rounded-lg font-semibold border border-blue-100">HTML Supported</span>
+              </div>
+
+              <!-- PDF Attachment Section (Multiple Files Support & Robust Error Catch) -->
+              <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-bold text-slate-800 flex items-center space-x-2">
+                    <i class="fa-solid fa-file-pdf text-rose-600 text-sm"></i>
+                    <span>PDF Attachment (Max 5MB each)</span>
+                  </span>
+                  <!-- Multiple attributes added for multi-selection -->
+                  <input type="file" id="pdf-file-input" class="hidden" accept=".pdf,application/pdf" multiple onchange="handlePdfAttachmentSelect(event)">
+                  <button type="button" onclick="document.getElementById('pdf-file-input').click()" class="px-3 py-1.5 bg-blue-900 hover:bg-blue-800 text-white font-semibold rounded-lg text-xs transition-all shadow-sm flex items-center space-x-1.5">
+                    <i class="fa-solid fa-upload"></i>
+                    <span>Upload PDF(s)</span>
+                  </button>
+                </div>
+                
+                <!-- Container for Multiple PDF Attachment List -->
+                <div id="pdf-attachment-list" class="space-y-2">
+                  <!-- Dynamically populated PDF chips -->
+                </div>
+              </div>
+
+              <!-- Available Variables Tags -->
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-2">Click variables to insert into template:</label>
+                <div class="flex flex-wrap gap-1.5">
+                  <button type="button" onclick="insertVariable('{{Policy Owner}}')" class="px-2.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-800 font-bold rounded-lg text-xs font-mono border border-blue-200 transition-colors shadow-sm">{{Policy Owner}}</button>
+                  <button type="button" onclick="insertVariable('{{Policy Insured}}')" class="px-2.5 py-1.5 bg-slate-100 hover:bg-blue-50 hover:text-blue-700 text-slate-700 rounded-lg text-xs font-mono border border-slate-200 transition-colors shadow-sm">{{Policy Insured}}</button>
+                  <button type="button" onclick="insertVariable('{{Policy Number}}')" class="px-2.5 py-1.5 bg-slate-100 hover:bg-blue-50 hover:text-blue-700 text-slate-700 rounded-lg text-xs font-mono border border-slate-200 transition-colors shadow-sm">{{Policy Number}}</button>
+                  <button type="button" onclick="insertVariable('{{Plan Type}}')" class="px-2.5 py-1.5 bg-slate-100 hover:bg-blue-50 hover:text-blue-700 text-slate-700 rounded-lg text-xs font-mono border border-slate-200 transition-colors shadow-sm">{{Plan Type}}</button>
+                  <button type="button" onclick="insertVariable('{{Premium Amount}}')" class="px-2.5 py-1.5 bg-slate-100 hover:bg-blue-50 hover:text-blue-700 text-slate-700 rounded-lg text-xs font-mono border border-slate-200 transition-colors shadow-sm">{{Premium Amount}}</button>
+                  <button type="button" onclick="insertVariable('{{Billing Frequency}}')" class="px-2.5 py-1.5 bg-slate-100 hover:bg-blue-50 hover:text-blue-700 text-slate-700 rounded-lg text-xs font-mono border border-slate-200 transition-colors shadow-sm">{{Billing Frequency}}</button>
+                  <button type="button" onclick="insertVariable('{{Due Date}}')" class="px-2.5 py-1.5 bg-slate-100 hover:bg-blue-50 hover:text-blue-700 text-slate-700 rounded-lg text-xs font-mono border border-slate-200 transition-colors shadow-sm">{{Due Date}}</button>
+                  <button type="button" onclick="insertVariable('{{Payment Method}}')" class="px-2.5 py-1.5 bg-slate-100 hover:bg-blue-50 hover:text-blue-700 text-slate-700 rounded-lg text-xs font-mono border border-slate-200 transition-colors shadow-sm">{{Payment Method}}</button>
+                  <button type="button" onclick="insertVariable('{{Fund Value}}')" class="px-2.5 py-1.5 bg-slate-100 hover:bg-blue-50 hover:text-blue-700 text-slate-700 rounded-lg text-xs font-mono border border-slate-200 transition-colors shadow-sm">{{Fund Value}}</button>
+                  <button type="button" onclick="insertVariable('{{Fund Type}}')" class="px-2.5 py-1.5 bg-slate-100 hover:bg-blue-50 hover:text-blue-700 text-slate-700 rounded-lg text-xs font-mono border border-slate-200 transition-colors shadow-sm">{{Fund Type}}</button>
+                  <button type="button" onclick="insertVariable('{{Policy Update Note}}')" class="px-2.5 py-1.5 bg-slate-100 hover:bg-blue-50 hover:text-blue-700 text-slate-700 rounded-lg text-xs font-mono border border-slate-200 transition-colors shadow-sm">{{Policy Update Note}}</button>
+                  <button type="button" onclick="insertVariable('{{Policy Benefits}}')" class="px-2.5 py-1.5 bg-slate-100 hover:bg-blue-50 hover:text-blue-700 text-slate-700 rounded-lg text-xs font-mono border border-slate-200 transition-colors shadow-sm">{{Policy Benefits}}</button>
+                </div>
+              </div>
+
+              <!-- Subject Input -->
+              <div>
+                <label for="template-subject" class="block text-xs font-semibold text-slate-700 mb-1.5">Email Subject</label>
+                <input type="text" id="template-subject" oninput="updateLivePreview()" class="w-full text-xs p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600 font-medium">
+              </div>
+
+              <!-- Email Body Textarea -->
+              <div>
+                <label for="template-body" class="block text-xs font-semibold text-slate-700 mb-1.5">Email HTML / Text Body</label>
+                <textarea id="template-body" rows="11" oninput="updateLivePreview()" class="w-full text-xs p-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600 font-mono leading-relaxed custom-scrollbar shadow-inner"></textarea>
+              </div>
+
+              <!-- Template Actions -->
+              <div class="flex items-center justify-between pt-1">
+                <button onclick="restoreDefaultTemplate()" class="text-xs text-slate-500 hover:text-slate-800 underline font-medium">
+                  Reset Default Template
+                </button>
+                <span class="text-[11px] text-emerald-600 font-semibold flex items-center space-x-1.5">
+                  <i class="fa-solid fa-floppy-disk"></i>
+                  <span>Auto-saved locally</span>
+                </span>
+              </div>
+
+            </div>
+
+            <!-- Right Panel: Live Dynamic Preview -->
+            <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col space-y-4">
+              
+              <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h3 class="text-sm font-bold text-slate-900 flex items-center space-x-2">
+                  <i class="fa-solid fa-eye text-emerald-600"></i>
+                  <span>Live Recipient Preview</span>
+                </h3>
+
+                <!-- Preview Client Selector Dropdown -->
+                <div class="flex items-center space-x-2">
+                  <label class="text-xs text-slate-500 font-medium">Sample Policy:</label>
+                  <select id="preview-client-select" onchange="updateLivePreview()" class="text-xs bg-slate-100 border border-slate-200 rounded-xl px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-600 font-medium">
+                    <!-- Populated dynamically -->
+                  </select>
+                </div>
+              </div>
+
+              <!-- Simulated Email Client Inbox Card -->
+              <div class="border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-sm flex-1 flex flex-col">
+                <!-- Email Header Bar -->
+                <div class="bg-slate-100/80 p-4 border-b border-slate-200 space-y-2 text-xs text-slate-600">
+                  <div class="flex items-center">
+                    <span class="w-20 text-slate-400 font-medium">From:</span>
+                    <span class="font-semibold text-slate-800">Mark Isaac Ison &lt;mark.ison@prulifeuk.com.ph&gt;</span>
+                  </div>
+                  <div class="flex items-center">
+                    <span class="w-20 text-slate-400 font-medium">To:</span>
+                    <span id="preview-to" class="font-medium text-slate-700">select client...</span>
+                  </div>
+                  <div class="flex items-start">
+                    <span class="w-20 text-slate-400 font-medium">Subject:</span>
+                    <span id="preview-subject" class="font-bold text-slate-900">...</span>
+                  </div>
+                  <div id="preview-attachment-row" class="flex items-start pt-1 border-t border-slate-200/60 hidden">
+                    <span class="w-20 text-slate-400 font-medium pt-1">Attachments:</span>
+                    <div id="preview-pdf-list" class="flex flex-wrap gap-1.5 flex-1">
+                      <!-- Rendered attachment chips with preview buttons -->
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Email Body Render View -->
+                <div id="preview-body-container" class="p-6 overflow-y-auto custom-scrollbar flex-1 bg-white text-slate-800 text-xs">
+                  <!-- HTML rendered here -->
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Tab 4: Send Portal & Batch Automation -->
+        <div id="tab-send" class="tab-content hidden space-y-6">
+          
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            <!-- Send Controls Panel -->
+            <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-6">
+              <div>
+                <h3 class="text-sm font-bold text-slate-900 flex items-center space-x-2">
+                  <i class="fa-solid fa-paper-plane text-blue-600"></i>
+                  <span>Batch Dispatch Portal</span>
+                </h3>
+                <p class="text-xs text-slate-500 mt-1">Simulate or trigger live email delivery for pending quarterly updates via your connected Gmail API.</p>
+              </div>
+
+              <!-- Batch Options -->
+              <div class="space-y-3">
+                <label class="block text-xs font-semibold text-slate-700">Sending Target:</label>
+                
+                <div class="space-y-2.5">
+                  <label class="flex items-center space-x-3 p-3.5 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer hover:bg-blue-50/50 transition-colors shadow-sm">
+                    <input type="radio" name="send-target-option" value="PENDING" checked class="text-blue-600 focus:ring-blue-500 w-4 h-4">
+                    <div>
+                      <p class="text-xs font-bold text-slate-900">All Pending Records Only</p>
+                      <p class="text-[11px] text-slate-500">Automatically skips records marked as SENT</p>
+                    </div>
+                  </label>
+
+                  <label class="flex items-center space-x-3 p-3.5 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer hover:bg-blue-50/50 transition-colors shadow-sm">
+                    <input type="radio" name="send-target-option" value="SELECTED" class="text-blue-600 focus:ring-blue-500 w-4 h-4">
+                    <div>
+                      <p class="text-xs font-bold text-slate-900">Selected Checked Rows</p>
+                      <p id="send-selected-count-label" class="text-[11px] text-slate-500">0 records currently selected in table</p>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              <!-- Speed Simulation Delay Slider -->
+              <div class="space-y-2">
+                <div class="flex justify-between items-center text-xs">
+                  <label class="font-semibold text-slate-700">Sending Interval Delay:</label>
+                  <span id="delay-val-label" class="text-blue-700 font-bold">1.0 sec</span>
+                </div>
+                <input type="range" id="send-delay-slider" min="0.2" max="3" step="0.2" value="1.0" oninput="document.getElementById('delay-val-label').innerText = this.value + ' sec'" class="w-full accent-blue-700">
+                <p class="text-[10px] text-slate-400">Controls request delay between emails to avoid Google rate limits.</p>
+              </div>
+
+              <!-- Big Launch Action Button -->
+              <div class="pt-2">
+                <button id="start-send-btn" onclick="startBatchSend()" class="w-full py-3.5 bg-blue-900 hover:bg-blue-800 text-white font-bold text-xs rounded-xl shadow-lg transition-all flex items-center justify-center space-x-2">
+                  <i class="fa-solid fa-rocket"></i>
+                  <span>Start Sending Batch Emails</span>
+                </button>
+
+                <button id="stop-send-btn" onclick="stopBatchSend()" class="w-full py-3.5 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl shadow-lg transition-all flex items-center justify-center space-x-2 hidden">
+                  <i class="fa-solid fa-hand"></i>
+                  <span>Pause / Cancel Dispatch</span>
+                </button>
+              </div>
+
+            </div>
+
+            <!-- Live Progress Bar & Console Log Box -->
+            <div class="lg:col-span-2 bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col space-y-4">
+              
+              <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h3 class="text-sm font-bold text-slate-900 flex items-center space-x-2">
+                  <i class="fa-solid fa-terminal text-slate-700"></i>
+                  <span>Live Sending Monitor & Output Console</span>
+                </h3>
+
+                <button onclick="clearConsoleLogs()" class="text-xs text-slate-500 hover:text-slate-800 font-medium">
+                  Clear Logs
+                </button>
+              </div>
+
+              <!-- Progress Bar -->
+              <div class="space-y-2">
+                <div class="flex justify-between items-center text-xs font-semibold">
+                  <span id="progress-status-text" class="text-slate-600">Ready to start dispatch</span>
+                  <span id="progress-percentage-text" class="text-blue-700 font-bold">0%</span>
+                </div>
+                <div class="w-full h-3.5 bg-slate-100 rounded-full overflow-hidden border border-slate-200 shadow-inner">
+                  <div id="progress-bar-fill" class="h-full bg-gradient-to-r from-blue-700 to-indigo-600 w-0 transition-all duration-300"></div>
+                </div>
+              </div>
+
+              <!-- Real-time Terminal Log Console -->
+              <div id="console-log-box" class="flex-1 bg-slate-950 text-slate-200 font-mono text-[11px] p-4.5 rounded-xl custom-scrollbar overflow-y-auto space-y-1.5 min-h-[300px] shadow-inner">
+                <div class="text-slate-500">// System ready. Click "Start Sending Batch Emails" to initiate delivery.</div>
+              </div>
+
+              <!-- Download Report Toolbar -->
+              <div class="flex items-center justify-between border-t border-slate-100 pt-3">
+                <span class="text-xs text-slate-500 font-medium">Need an offline audit log?</span>
+                <button onclick="exportSendingReportCSV()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl transition-colors flex items-center space-x-2 shadow-sm">
+                  <i class="fa-solid fa-file-csv"></i>
+                  <span>Export Report (CSV)</span>
+                </button>
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+        <!-- Tab 5: Gmail Settings View -->
+        <div id="tab-settings" class="tab-content hidden space-y-6">
+          <div class="bg-white p-8 rounded-2xl border border-slate-200/80 shadow-sm space-y-6 max-w-2xl">
+            <div class="border-b border-slate-100 pb-4">
+              <h3 class="text-base font-bold text-slate-900 flex items-center space-x-2">
+                <i class="fa-solid fa-sliders text-emerald-600"></i>
+                <span>Gmail API Connection Settings</span>
+              </h3>
+              <p class="text-xs text-slate-500 mt-1">Connect your Google Apps Script Web App Endpoint URL to enable real email dispatch directly to your Gmail.</p>
+            </div>
+
+            <div class="space-y-4">
+              <div>
+                <label for="gas-url-input" class="block text-xs font-semibold text-slate-700 mb-1.5">
+                  Google Apps Script Web App URL *
+                </label>
+                <input type="url" id="gas-url-input" placeholder="https://script.google.com/macros/s/AKfycb.../exec" class="w-full text-xs p-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600 font-mono">
+                <p class="text-[11px] text-slate-400 mt-1.5">Get this URL by deploying your Apps Script project as a Web App (<strong>Execute as: Me, Who has access: Anyone</strong>).</p>
+              </div>
+
+              <div class="flex items-center space-x-3 pt-2">
+                <button onclick="saveGasSettings()" class="px-5 py-3 bg-blue-900 hover:bg-blue-800 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center space-x-2">
+                  <i class="fa-solid fa-floppy-disk"></i>
+                  <span>Save Connection</span>
+                </button>
+
+                <button onclick="testGasConnection()" class="px-5 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center space-x-2">
+                  <i class="fa-solid fa-plug"></i>
+                  <span>Test API Connection</span>
+                </button>
+              </div>
+
+              <div id="conn-test-result" class="p-4 rounded-xl border text-xs hidden"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 6: Google Apps Script Helper -->
+        <div id="tab-gas" class="tab-content hidden space-y-6">
+          <div class="bg-white p-8 rounded-2xl border border-slate-200/80 shadow-sm space-y-6">
+            
+            <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+              <div>
+                <h3 class="text-base font-bold text-slate-900 flex items-center space-x-2">
+                  <i class="fa-solid fa-code text-amber-500"></i>
+                  <span>Google Apps Script Integration Code</span>
+                </h3>
+                <p class="text-xs text-slate-500 mt-1">Copy this code into your Google Apps Script project to allow live email dispatch with multiple PDF attachments from this web app.</p>
+              </div>
+
+              <button onclick="copyGasCode()" class="px-4.5 py-3 bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-bold rounded-xl shadow-sm transition-all flex items-center space-x-2">
+                <i class="fa-solid fa-copy"></i>
+                <span id="copy-btn-text">Copy Script Code</span>
+              </button>
+            </div>
+
+            <!-- Step by Step instructions box -->
+            <div class="bg-amber-50/80 border border-amber-200 rounded-2xl p-5 text-xs text-amber-900 space-y-2.5 shadow-sm">
+              <h4 class="font-bold flex items-center space-x-2 text-amber-950 text-sm">
+                <i class="fa-solid fa-circle-info text-amber-600"></i>
+                <span>Paano I-deploy Para Sa Live Gmail Sending na May PDF Attachment(s):</span>
+              </h4>
+              <ol class="list-decimal pl-5 space-y-1.5 leading-relaxed font-medium">
+                <li>Pumunta sa <a href="https://script.google.com" target="_blank" class="underline font-bold">script.google.com</a> o magbukas ng Google Sheet &gt; <strong>Extensions &gt; Apps Script</strong>.</li>
+                <li>I-paste ang na-copy na code sa ibaba at i-click ang **Save (💾)**.</li>
+                <li>I-click ang **Deploy &gt; New deployment**, piliin ang **Web App** (⚙️).</li>
+                <li>I-set ang **Execute as:** <code>Me (your_email@gmail.com)</code> at **Who has access:** <code>Anyone</code>.</li>
+                <li>I-click ang **Deploy**, aprubahan ang permissions, at i-copy ang na-generate na **Web App URL**.</li>
+                <li>Bumalik dito sa app, i-upload ang iyong PDF document(s) sa **Template & Preview** tab, at i-save ang URL sa **Gmail Settings (⚙️)**!</li>
+              </ol>
+            </div>
+
+            <!-- Code block display -->
+            <div class="relative">
+              <pre id="gas-code-block" class="bg-slate-900 text-amber-300 font-mono text-xs p-6 rounded-2xl overflow-x-auto custom-scrollbar leading-relaxed border border-slate-800 shadow-inner"></pre>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </main>
+
+  </div>
+
+  <!-- Add/Edit Client Modal (Configured for 13 Fields) -->
+  <div id="client-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+    <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-2xl p-8 space-y-5 max-h-[92vh] overflow-y-auto custom-scrollbar">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+        <h3 id="modal-title" class="text-base font-bold text-slate-900">Add New Policy Record</h3>
+        <button onclick="closeClientModal()" class="text-slate-400 hover:text-slate-600 p-1">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <form id="client-form" onsubmit="saveClientForm(event)" class="space-y-4">
+        <input type="hidden" id="modal-client-id">
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1.5">Policy Owner *</label>
+            <input type="text" id="modal-policy-owner" required placeholder="Juan Dela Cruz" class="w-full text-xs p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600 font-medium">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1.5">Policy Insured *</label>
+            <input type="text" id="modal-policy-insured" required placeholder="Juan Dela Cruz Jr." class="w-full text-xs p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600 font-medium">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1.5">Email Address *</label>
+            <input type="email" id="modal-client-email" required placeholder="juan.delacruz@example.com" class="w-full text-xs p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600 font-medium">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1.5">Policy Number *</label>
+            <input type="text" id="modal-policy-no" required placeholder="PRU-1029381" class="w-full text-xs p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600 font-medium">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1.5">Plan Type *</label>
+            <input type="text" id="modal-plan-type" required placeholder="PRUlink assurance account plus" class="w-full text-xs p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600 font-medium">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1.5">Premium Amount *</label>
+            <input type="text" id="modal-premium-amount" required placeholder="15200" class="w-full text-xs p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600 font-medium">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1.5">Billing Frequency *</label>
+            <select id="modal-billing-freq" class="w-full text-xs p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600 font-medium">
+              <option value="Quarterly">Quarterly</option>
+              <option value="Annual">Annual</option>
+              <option value="Semi-Annual">Semi-Annual</option>
+              <option value="Monthly">Monthly</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1.5">Due Date *</label>
+            <input type="text" id="modal-due-date" required placeholder="April 15, 2026" class="w-full text-xs p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600 font-medium">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1.5">Payment Method *</label>
+            <input type="text" id="modal-payment-method" required placeholder="Auto-Debit (ADA)" class="w-full text-xs p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600 font-medium">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1.5">Fund Value *</label>
+            <input type="text" id="modal-fund-value" required placeholder="185400" class="w-full text-xs p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600 font-medium">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1.5">Fund Type *</label>
+          <input type="text" id="modal-fund-type" required placeholder="PRUlink Growth Fund" class="w-full text-xs p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600 font-medium">
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1.5">Policy Update Note *</label>
+          <textarea id="modal-policy-note" required rows="2" placeholder="In-force. Active coverage. Fund values grew by +4.2% this quarter." class="w-full text-xs p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600 font-medium"></textarea>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1.5">Policy Benefits (Newlines or commas for bullets) *</label>
+          <textarea id="modal-policy-benefits" required rows="3" placeholder="Life Insurance Coverage: ₱1,500,000&#10;Critical Illness Rider: ₱500,000" class="w-full text-xs p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600 font-mono"></textarea>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1.5">Delivery Status</label>
+          <select id="modal-delivery-status" class="w-full text-xs p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600 font-medium">
+            <option value="Pending">Pending</option>
+            <option value="Sent">Sent</option>
+            <option value="Failed">Failed</option>
+          </select>
+        </div>
+
+        <div class="flex items-center justify-end space-x-3 pt-4 border-t border-slate-100">
+          <button type="button" onclick="closeClientModal()" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl transition-colors">
+            Cancel
+          </button>
+          <button type="submit" class="px-5 py-2.5 bg-blue-900 hover:bg-blue-800 text-white text-xs font-semibold rounded-xl shadow-md transition-all">
+            Save Policy Details
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- PDF Preview Modal -->
+  <div id="pdf-view-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+    <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-4xl h-[85vh] flex flex-col overflow-hidden">
+      <div class="flex items-center justify-between p-4 border-b border-slate-100 bg-slate-50">
+        <h3 id="pdf-modal-title" class="text-sm font-bold text-slate-900 flex items-center space-x-2 truncate">
+          <i class="fa-solid fa-file-pdf text-rose-600"></i>
+          <span class="truncate">PDF Document Preview</span>
+        </h3>
+        <button onclick="closePdfViewModal()" class="text-slate-400 hover:text-slate-600 p-1 text-lg">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="flex-1 bg-slate-100 p-2">
+        <iframe id="pdf-viewer-frame" class="w-full h-full rounded-xl border border-slate-200" src="about:blank"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Message Notification -->
+  <div id="toast-msg" class="fixed bottom-6 right-6 bg-slate-900 text-white text-xs px-5 py-3.5 rounded-2xl shadow-2xl border border-slate-800 flex items-center space-x-3 transform translate-y-20 opacity-0 transition-all duration-300 z-50">
+    <i id="toast-icon" class="fa-solid fa-circle-check text-emerald-400 text-base"></i>
+    <span id="toast-text">Action completed successfully</span>
+  </div>
+
+
+  <!-- Application Core Script -->
+  <script>
+    // ==========================================
+    // CURRENCY FORMATTER UTILITY
+    // ==========================================
+    function formatCurrency(val) {
+      if (val === null || val === undefined || val === '') return '₱0.00';
+      
+      let strVal = String(val).replace(/[^0-9.-]/g, '');
+      let num = parseFloat(strVal);
+      
+      if (isNaN(num)) return '₱0.00';
+
+      return '₱' + num.toLocaleString('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
+    }
+
+    // ==========================================
+    // DATA STATE & DEFAULT VALUES (13 FIELDS)
+    // ==========================================
+    const DEFAULT_CLIENTS = [
+      { id: '1', policyOwner: 'Juan Dela Cruz', policyInsured: 'Juan Dela Cruz', email: 'juan.delacruz@example.com', policyNo: 'PRU-1029381', planType: 'PRUlink assurance account plus', premiumAmount: formatCurrency('15200'), billingFreq: 'Quarterly', dueDate: 'April 15, 2026', paymentMethod: 'Auto-Debit (ADA)', fundValue: formatCurrency('185400'), fundType: 'PRUlink Growth Fund', policyNote: 'In-force and active. Fund values grew by +4.2% this quarter.', policyBenefits: 'Life Insurance Coverage: ₱1,500,000\nCritical Illness Rider: ₱500,000\nAccidental Death & Dismemberment', status: 'Pending' },
+      { id: '2', policyOwner: 'Maria Santos', policyInsured: 'Maria Santos', email: 'maria.santos@example.com', policyNo: 'PRU-8823104', planType: 'PRUlink exact protector', premiumAmount: formatCurrency('45000'), billingFreq: 'Annual', dueDate: 'April 15, 2026', paymentMethod: 'Credit Card', fundValue: formatCurrency('420000'), fundType: 'PRUlink Equity Fund', policyNote: 'In-force. Annual premium due on April 15, 2026.', policyBenefits: 'Life Insurance Coverage: ₱3,000,000\nTotal Disability Waiver', status: 'Pending' },
+      { id: '3', policyOwner: 'Antonio Luna', policyInsured: 'Antonio Luna Jr.', email: 'antonio.luna@example.com', policyNo: 'PRU-4410293', planType: 'PRUlink investor account plus', premiumAmount: formatCurrency('8500'), billingFreq: 'Monthly', dueDate: 'April 30, 2026', paymentMethod: 'Online Bank Transfer', fundValue: formatCurrency('95200'), fundType: 'PRUlink Balanced Fund', policyNote: 'In-force. Updated beneficiary declaration confirmed.', policyBenefits: 'Life Insurance Coverage: ₱1,000,000\nHospital Income Benefit', status: 'Sent' },
+      { id: '4', policyOwner: 'Corazon Aquino', policyInsured: 'Corazon Aquino', email: 'corazon.a@example.com', policyNo: 'PRU-7712390', planType: 'PRUhealth prime', premiumAmount: formatCurrency('12000'), billingFreq: 'Quarterly', dueDate: 'April 10, 2026', paymentMethod: 'GCash / E-Wallet', fundValue: formatCurrency('140500'), fundType: 'PRUlink Proactive Fund', policyNote: 'Grace Period. Please arrange payment before end of month.', policyBenefits: 'Life Insurance Coverage: ₱1,200,000\nCritical Illness Protection', status: 'Pending' },
+      { id: '5', policyOwner: 'Jose Rizal', policyInsured: 'Jose Rizal', email: 'jose.rizal@example.com', policyNo: 'PRU-9923841', planType: 'PRUlink elite protector 5', premiumAmount: formatCurrency('20000'), billingFreq: 'Semi-Annual', dueDate: 'May 01, 2026', paymentMethod: 'Auto-Debit (ADA)', fundValue: formatCurrency('310000'), fundType: 'PRUlink Bond Fund', policyNote: 'Active. Added VUL Critical Illness rider approved.', policyBenefits: 'Life Insurance Coverage: ₱2,500,000\nAccidental Death Rider\nCritical Illness Benefit', status: 'Pending' }
+    ];
+
+    const DEFAULT_TEMPLATE_SUBJECT = "Quarterly Policy Briefing: {{Policy Number}} ({{Plan Type}}) - {{Policy Owner}}";
+    
+    const DEFAULT_TEMPLATE_BODY = `<div style="font-family: Arial, sans-serif; color: #333333; line-height: 1.6; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 16px; background-color: #ffffff;">
+  <div style="text-align: center; padding-bottom: 16px; border-bottom: 2px solid #003366;">
+    <h2 style="color: #003366; margin: 0; font-size: 22px; font-weight: bold;">PRU LIFE UK</h2>
+    <p style="color: #64748b; font-size: 12px; margin-top: 4px; font-weight: 500;">Financial Security & Policy Quarterly Briefing</p>
+  </div>
+
+  <p style="margin-top: 24px;">Magandang araw, <strong>{{Policy Owner}}</strong>!</p>
+
+  <p>Nais ko lamang magpadala ng iyong regular na <strong>quarterly policy update</strong> para sa iyong policy (Insured: <strong>{{Policy Insured}}</strong>) kasama ang ating nakalakip na PDF attachment upang masiguro na maayos at nakasubaybay ang iyong financial protection.</p>
+
+  <div style="background-color: #f8fafc; padding: 18px; border-left: 4px solid #003366; margin: 20px 0; border-radius: 8px;">
+    <p style="margin: 0 0 8px 0; font-size: 13px;"><strong>Policy Number:</strong> <span style="color: #003366; font-weight: bold;">{{Policy Number}}</span></p>
+    <p style="margin: 0 0 8px 0; font-size: 13px;"><strong>Plan Type:</strong> <span style="color: #003366; font-weight: bold;">{{Plan Type}}</span></p>
+    <p style="margin: 0 0 8px 0; font-size: 13px;"><strong>Current Status / Update Note:</strong> {{Policy Update Note}}</p>
+    <p style="margin: 0 0 8px 0; font-size: 13px;"><strong>Premium Amount:</strong> {{Premium Amount}} ({{Billing Frequency}})</p>
+    <p style="margin: 0 0 8px 0; font-size: 13px;"><strong>Due Date:</strong> {{Due Date}} | <strong>Payment Method:</strong> {{Payment Method}}</p>
+    <p style="margin: 0; font-size: 13px;"><strong>Fund Value:</strong> {{Fund Value}} ({{Fund Type}})</p>
+  </div>
+
+  <p style="margin: 0 0 6px 0; font-size: 13px; font-weight: bold; color: #1e293b;">Policy Benefits & Riders:</p>
+  {{Policy Benefits}}
+
+  <p style="margin-top: 24px;">Kung mayroon kang mga katanungan o nais i-update sa iyong account, huwag mag-atubiling mag-reply sa email na ito.</p>
+
+  <p>Maraming salamat sa patuloy na tiwala!</p>
+
+  <div style="margin-top: 32px; padding-top: 16px; border-top: 1px solid #e2e8f0;">
+    <p style="margin: 0; font-weight: bold; color: #003366;">Mark Isaac Ison</p>
+    <p style="margin: 2px 0 0 0; font-size: 12px; color: #64748b;">Financial Consultant | Pru Life UK</p>
+  </div>
+</div>`;
+
+    let clients = [];
+    let isSendingBatch = false;
+    let shouldStopSending = false;
+    let gasWebAppUrl = '';
+    
+    // Multi-PDF Attachment State Array
+    let attachedPdfs = [];
+
+    // ==========================================
+    // INITIALIZATION & LOCAL STORAGE
+    // ==========================================
+    window.onload = function() {
+      loadGasSettings();
+      loadClientsFromStorage();
+      loadTemplateFromStorage();
+      loadPdfFromStorage();
+      renderDashboard();
+      renderClientsTable();
+      updateLivePreview();
+      renderGasCode();
+    };
+
+    function loadGasSettings() {
+      gasWebAppUrl = localStorage.getItem('gas_web_app_url') || '';
+      const input = document.getElementById('gas-url-input');
+      if (input) input.value = gasWebAppUrl;
+      updateConnectionBadges();
+    }
+
+    function saveGasSettings() {
+      const url = document.getElementById('gas-url-input').value.trim();
+      if (url && !url.startsWith('https://script.google.com/macros/s/')) {
+        showToast('Please enter a valid Google Apps Script Web App URL', true);
+        return;
+      }
+
+      gasWebAppUrl = url;
+      localStorage.setItem('gas_web_app_url', gasWebAppUrl);
+      updateConnectionBadges();
+      showToast('Connection settings saved successfully!');
+    }
+
+    function updateConnectionBadges() {
+      const navDot = document.getElementById('nav-conn-status');
+      const banner = document.getElementById('conn-banner-status');
+
+      if (gasWebAppUrl) {
+        if (navDot) navDot.className = 'w-2 h-2 rounded-full bg-emerald-500 ml-auto';
+        if (banner) {
+          banner.className = 'cursor-pointer px-3.5 py-1.5 rounded-xl text-xs font-semibold border flex items-center space-x-2 bg-emerald-50 border-emerald-200 text-emerald-800 hover:bg-emerald-100 transition-colors shadow-sm';
+          banner.innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-500"></span><span>Gmail API: Connected</span>';
+        }
+      } else {
+        if (navDot) navDot.className = 'w-2 h-2 rounded-full bg-rose-500 ml-auto';
+        if (banner) {
+          banner.className = 'cursor-pointer px-3.5 py-1.5 rounded-xl text-xs font-semibold border flex items-center space-x-2 bg-slate-100 border-slate-200 text-slate-600 hover:bg-slate-200 transition-colors shadow-sm';
+          banner.innerHTML = '<span class="w-2 h-2 rounded-full bg-rose-500"></span><span>Gmail API: Not Connected</span>';
+        }
+      }
+    }
+
+    async function testGasConnection() {
+      saveGasSettings();
+      const resBox = document.getElementById('conn-test-result');
+      resBox.classList.remove('hidden');
+      resBox.className = 'p-4 rounded-xl border text-xs bg-slate-100 border-slate-200 text-slate-700 font-medium';
+      resBox.innerText = 'Testing API endpoint reachability...';
+
+      if (!gasWebAppUrl) {
+        resBox.className = 'p-4 rounded-xl border text-xs bg-rose-50 border-rose-200 text-rose-800 font-medium';
+        resBox.innerText = 'No Web App URL provided. Please paste your Google Apps Script URL above first.';
+        return;
+      }
+
+      try {
+        await fetch(gasWebAppUrl, { method: 'GET', mode: 'no-cors' });
+        resBox.className = 'p-4 rounded-xl border text-xs bg-emerald-50 border-emerald-200 text-emerald-800 font-medium';
+        resBox.innerText = 'Endpoint reached successfully! Your web app is ready to dispatch real emails via Gmail.';
+      } catch (err) {
+        resBox.className = 'p-4 rounded-xl border text-xs bg-rose-50 border-rose-200 text-rose-800 font-medium';
+        resBox.innerText = 'Connection Error: Unable to reach Google Web App endpoint. Make sure "Who has access" is set to "Anyone" upon deployment.';
+      }
+    }
+
+    function loadClientsFromStorage() {
+      const saved = localStorage.getItem('policy_clients_data_v3');
+      if (saved) {
+        try {
+          clients = JSON.parse(saved);
+        } catch(e) {
+          clients = [...DEFAULT_CLIENTS];
+        }
+      } else {
+        clients = [...DEFAULT_CLIENTS];
+      }
+      updateClientBadgeCounts();
+    }
+
+    function saveClientsToStorage() {
+      localStorage.setItem('policy_clients_data_v3', JSON.stringify(clients));
+      updateClientBadgeCounts();
+      renderDashboard();
+    }
+
+    function updateClientBadgeCounts() {
+      document.getElementById('nav-client-count').innerText = clients.length;
+    }
+
+    function loadTemplateFromStorage() {
+      const subj = localStorage.getItem('policy_tpl_subject_v3') || DEFAULT_TEMPLATE_SUBJECT;
+      const body = localStorage.getItem('policy_tpl_body_v3') || DEFAULT_TEMPLATE_BODY;
+
+      document.getElementById('template-subject').value = subj;
+      document.getElementById('template-body').value = body;
+    }
+
+    function saveTemplateToStorage() {
+      const subj = document.getElementById('template-subject').value;
+      const body = document.getElementById('template-body').value;
+
+      localStorage.setItem('policy_tpl_subject_v3', subj);
+      localStorage.setItem('policy_tpl_body_v3', body);
+    }
+
+    // MULTI-PDF LocalStorage Handlers with Quota Protection
+    function loadPdfFromStorage() {
+      const savedPdf = localStorage.getItem('policy_newsletter_pdfs_v2');
+      if (savedPdf) {
+        try {
+          attachedPdfs = JSON.parse(savedPdf) || [];
+        } catch(e) {
+          attachedPdfs = [];
+        }
+      } else {
+        // Migration check from old single PDF key
+        const oldPdf = localStorage.getItem('policy_newsletter_pdf');
+        if (oldPdf) {
+          try {
+            const parsed = JSON.parse(oldPdf);
+            if (parsed.name && parsed.base64Data) {
+              attachedPdfs = [parsed];
+            }
+          } catch(e) {}
+        }
+      }
+      updatePdfUI();
+    }
+
+    function savePdfToStorage() {
+      try {
+        if (attachedPdfs.length > 0) {
+          localStorage.setItem('policy_newsletter_pdfs_v2', JSON.stringify(attachedPdfs));
+        } else {
+          localStorage.removeItem('policy_newsletter_pdfs_v2');
+        }
+        updatePdfUI();
+        updateLivePreview();
+      } catch (e) {
+        console.error(e);
+        showToast('Local browser storage is full. The PDF is held in session memory for sending.', true);
+        updatePdfUI();
+        updateLivePreview();
+      }
+    }
+
+    // Handles PDF File selection, file size guard (max 5MB per file) and error reporting
+    function handlePdfAttachmentSelect(event) {
+      const files = Array.from(event.target.files);
+      if (files.length === 0) return;
+
+      const validFiles = files.filter(f => f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf'));
+
+      if (validFiles.length === 0) {
+        showToast('Mangyaring pumili ng mga dokumentong PDF lamang (.pdf).', true);
+        return;
+      }
+
+      let loadedCount = 0;
+      let addedCount = 0;
+
+      validFiles.forEach(file => {
+        // Limit individual PDF files to 5MB to ensure stable base64 conversion and browser performance
+        if (file.size > 5 * 1024 * 1024) {
+          showToast(`Masyadong malaki ang ${file.name} (Lampas 5MB limit).`, true);
+          loadedCount++;
+          return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const base64String = e.target.result;
+          
+          if (!attachedPdfs) attachedPdfs = [];
+
+          // Avoid duplicate file names
+          if (!attachedPdfs.some(p => p.name === file.name)) {
+            attachedPdfs.push({
+              id: Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+              name: file.name,
+              mimeType: file.type || 'application/pdf',
+              base64Data: base64String
+            });
+            addedCount++;
+          }
+
+          loadedCount++;
+          if (loadedCount === validFiles.length) {
+            savePdfToStorage();
+            if (addedCount > 0) {
+              showToast(`${addedCount} PDF attachment(s) successfully added!`);
+            }
+          }
+        };
+
+        reader.onerror = function() {
+          showToast(`Nagka-problema sa pagbasa ng file: ${file.name}`, true);
+          loadedCount++;
+        };
+
+        reader.readAsDataURL(file);
+      });
+
+      event.target.value = '';
+    }
+
+    function removePdfAttachment(pdfId) {
+      attachedPdfs = attachedPdfs.filter(p => p.id !== pdfId);
+      savePdfToStorage();
+      showToast('PDF attachment removed.');
+    }
+
+    function viewPdfPreview(pdfId) {
+      const pdf = attachedPdfs.find(p => p.id === pdfId);
+      if (!pdf) return;
+
+      const iframe = document.getElementById('pdf-viewer-frame');
+      const title = document.getElementById('pdf-modal-title');
+      
+      title.innerHTML = `<i class="fa-solid fa-file-pdf text-rose-600"></i><span class="truncate">${escapeHtml(pdf.name)}</span>`;
+      iframe.src = pdf.base64Data;
+
+      document.getElementById('pdf-view-modal').classList.remove('hidden');
+    }
+
+    function closePdfViewModal() {
+      const iframe = document.getElementById('pdf-viewer-frame');
+      iframe.src = 'about:blank';
+      document.getElementById('pdf-view-modal').classList.add('hidden');
+    }
+
+    function updatePdfUI() {
+      const container = document.getElementById('pdf-attachment-list');
+      const previewRow = document.getElementById('preview-attachment-row');
+      const previewList = document.getElementById('preview-pdf-list');
+
+      container.innerHTML = '';
+      previewList.innerHTML = '';
+
+      if (attachedPdfs && attachedPdfs.length > 0) {
+        attachedPdfs.forEach(pdf => {
+          // Render item in Editor panel
+          const div = document.createElement('div');
+          div.className = 'text-xs text-slate-700 flex items-center justify-between bg-white p-2.5 rounded-lg border border-slate-200 shadow-sm';
+          div.innerHTML = `
+            <div class="flex items-center space-x-2 truncate">
+              <i class="fa-solid fa-file-pdf text-rose-600 text-sm shrink-0"></i>
+              <span class="truncate font-semibold text-slate-800" title="${escapeHtml(pdf.name)}">${escapeHtml(pdf.name)}</span>
+            </div>
+            <div class="flex items-center space-x-1 shrink-0">
+              <button type="button" onclick="viewPdfPreview('${pdf.id}')" class="text-blue-600 hover:text-blue-800 text-xs font-semibold px-2 py-1 bg-blue-50 hover:bg-blue-100 rounded transition-colors" title="View PDF">
+                <i class="fa-solid fa-eye mr-1"></i>View
+              </button>
+              <button type="button" onclick="removePdfAttachment('${pdf.id}')" class="text-rose-500 hover:text-rose-700 font-bold p-1" title="Remove PDF">
+                <i class="fa-solid fa-xmark"></i>
+              </button>
+            </div>
+          `;
+          container.appendChild(div);
+
+          // Render item chip in Preview panel
+          const chip = document.createElement('button');
+          chip.type = 'button';
+          chip.onclick = function() { viewPdfPreview(pdf.id); };
+          chip.className = 'bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-200 px-2.5 py-0.5 rounded-md text-[11px] font-semibold flex items-center space-x-1.5 transition-colors cursor-pointer';
+          chip.innerHTML = `<i class="fa-solid fa-file-pdf text-rose-600"></i><span class="truncate max-w-[140px]">${escapeHtml(pdf.name)}</span><i class="fa-solid fa-magnifying-glass text-[10px] text-rose-400 ml-1"></i>`;
+          previewList.appendChild(chip);
+        });
+
+        previewRow.classList.remove('hidden');
+      } else {
+        container.innerHTML = `
+          <div class="text-xs text-slate-500 bg-white p-2.5 rounded-lg border border-slate-200 text-center font-medium">
+            No PDF attached yet (Optional)
+          </div>
+        `;
+        previewRow.classList.add('hidden');
+      }
+    }
+
+    // ==========================================
+    // NAVIGATION LOGIC
+    // ==========================================
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+      document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.classList.remove('bg-blue-600', 'text-white', 'shadow-md');
+        btn.classList.add('hover:bg-slate-800', 'hover:text-white', 'text-slate-400');
+      });
+
+      document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+      const activeNav = document.getElementById(`nav-${tabId}`);
+      if (activeNav) {
+        activeNav.classList.add('bg-blue-600', 'text-white', 'shadow-md');
+        activeNav.classList.remove('hover:bg-slate-800', 'hover:text-white', 'text-slate-400');
+      }
+
+      const titleMap = {
+        'dashboard': 'Dashboard Overview',
+        'clients': 'Policy List & Spreadsheet Data',
+        'template': 'Email Template Editor & PDF Attachment',
+        'send': 'Batch Dispatch & Process Hub',
+        'settings': 'Gmail API Settings',
+        'gas': 'Google Apps Script Integration'
+      };
+      document.getElementById('page-title').innerText = titleMap[tabId] || 'Dashboard';
+
+      if (tabId === 'template') {
+        populatePreviewClientDropdown();
+        updateLivePreview();
+      }
+    }
+
+    // ==========================================
+    // DASHBOARD METRICS RENDER
+    // ==========================================
+    function renderDashboard() {
+      const total = clients.length;
+      const pending = clients.filter(c => c.status === 'Pending').length;
+      const sent = clients.filter(c => c.status === 'Sent').length;
+      const failed = clients.filter(c => c.status === 'Failed').length;
+
+      document.getElementById('stat-total').innerText = total;
+      document.getElementById('stat-pending').innerText = pending;
+      document.getElementById('stat-sent').innerText = sent;
+      document.getElementById('stat-failed').innerText = failed;
+
+      const recentTbody = document.getElementById('dashboard-recent-table');
+      recentTbody.innerHTML = '';
+
+      if (clients.length === 0) {
+        recentTbody.innerHTML = `<tr><td colspan="4" class="py-6 text-center text-slate-400 font-medium">No records loaded yet. Upload an Excel file or add a record.</td></tr>`;
+        return;
+      }
+
+      clients.slice(0, 5).forEach(c => {
+        const badgeClass = c.status === 'Sent' ? 'badge-sent' : c.status === 'Failed' ? 'badge-failed' : 'badge-pending';
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-50 transition-colors';
+        tr.innerHTML = `
+          <td class="py-3 font-semibold text-slate-900">
+            <span class="block">${escapeHtml(c.policyOwner)}</span>
+            <span class="text-[11px] text-slate-500 font-normal">Insured: ${escapeHtml(c.policyInsured)}</span>
+          </td>
+          <td class="py-3 font-mono text-slate-600">
+            <span class="block font-bold">${escapeHtml(c.policyNo)}</span>
+            <span class="text-[11px] text-blue-700 font-sans block">${escapeHtml(c.planType || 'PRUlink')}</span>
+          </td>
+          <td class="py-3 text-slate-600">
+            <span class="font-bold text-slate-800">${escapeHtml(c.premiumAmount || '')}</span>
+            <span class="text-[11px] text-slate-400 block">${escapeHtml(c.dueDate || '')}</span>
+          </td>
+          <td class="py-3 text-right">
+            <span class="px-2.5 py-1 rounded-full text-[10px] font-bold ${badgeClass}">${c.status}</span>
+          </td>
+        `;
+        recentTbody.appendChild(tr);
+      });
+    }
+
+    // ==========================================
+    // CLIENT / POLICY MANAGEMENT & TABLE RENDER
+    // ==========================================
+    function renderClientsTable(filterList = null) {
+      const listToRender = filterList || clients;
+      const tbody = document.getElementById('clients-table-body');
+      tbody.innerHTML = '';
+
+      if (listToRender.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="9" class="p-10 text-center text-slate-400 font-medium">No records found matching criteria.</td></tr>`;
+        document.getElementById('client-table-summary').innerText = `Showing 0 of ${clients.length} records`;
+        return;
+      }
+
+      listToRender.forEach(c => {
+        const badgeClass = c.status === 'Sent' ? 'badge-sent' : c.status === 'Failed' ? 'badge-failed' : 'badge-pending';
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-50 transition-colors';
+        tr.innerHTML = `
+          <td class="p-4 pl-6">
+            <input type="checkbox" value="${c.id}" class="client-row-checkbox rounded text-blue-600 focus:ring-blue-500 w-4 h-4" onchange="updateSelectedCountLabel()">
+          </td>
+          <td class="p-4">
+            <span class="font-bold text-slate-900 block">${escapeHtml(c.policyOwner)}</span>
+            <span class="text-[11px] text-slate-500">Insured: ${escapeHtml(c.policyInsured)}</span>
+          </td>
+          <td class="p-4 font-mono text-slate-600">
+            ${escapeHtml(c.email)}
+          </td>
+          <td class="p-4">
+            <span class="font-mono font-bold text-slate-800 block">${escapeHtml(c.policyNo)}</span>
+            <span class="text-[11px] text-blue-700 font-medium block">${escapeHtml(c.planType || '')}</span>
+          </td>
+          <td class="p-4">
+            <span class="font-bold text-slate-900 block">${escapeHtml(c.premiumAmount || '')}</span>
+            <span class="text-[11px] text-slate-500">${escapeHtml(c.billingFreq || '')}</span>
+          </td>
+          <td class="p-4">
+            <span class="text-slate-800 font-medium block">${escapeHtml(c.dueDate || '')}</span>
+            <span class="text-[11px] text-slate-500">${escapeHtml(c.paymentMethod || '')}</span>
+          </td>
+          <td class="p-4">
+            <span class="font-bold text-slate-900 block">${escapeHtml(c.fundValue || '')}</span>
+            <span class="text-[11px] text-slate-500 font-medium">${escapeHtml(c.fundType || '')}</span>
+          </td>
+          <td class="p-4">
+            <span class="px-3 py-1 rounded-full text-[11px] font-bold ${badgeClass}">${c.status}</span>
+          </td>
+          <td class="p-4 pr-6 text-right space-x-1">
+            <button onclick="previewClientEmail('${c.id}')" class="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors" title="Preview Email">
+              <i class="fa-solid fa-eye"></i>
+            </button>
+            <button onclick="openEditClientModal('${c.id}')" class="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors" title="Edit Details">
+              <i class="fa-solid fa-pen"></i>
+            </button>
+            <button onclick="deleteClient('${c.id}')" class="p-2 text-rose-600 hover:text-rose-800 hover:bg-rose-50 rounded-lg transition-colors" title="Delete Record">
+              <i class="fa-solid fa-trash-can"></i>
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      document.getElementById('client-table-summary').innerText = `Showing ${listToRender.length} of ${clients.length} records`;
+      updateSelectedCountLabel();
+    }
+
+    function filterClients() {
+      const query = document.getElementById('client-search-input').value.toLowerCase();
+      const statusFilter = document.getElementById('status-filter').value;
+
+      const filtered = clients.filter(c => {
+        const matchesQuery = (c.policyOwner && c.policyOwner.toLowerCase().includes(query)) ||
+                             (c.policyInsured && c.policyInsured.toLowerCase().includes(query)) ||
+                             c.email.toLowerCase().includes(query) ||
+                             c.policyNo.toLowerCase().includes(query) ||
+                             (c.planType && c.planType.toLowerCase().includes(query)) ||
+                             (c.fundType && c.fundType.toLowerCase().includes(query)) ||
+                             (c.premiumAmount && c.premiumAmount.toLowerCase().includes(query));
+        
+        const matchesStatus = statusFilter === 'ALL' || c.status === statusFilter;
+        return matchesQuery && matchesStatus;
+      });
+
+      renderClientsTable(filtered);
+    }
+
+    function toggleSelectAllClients(master) {
+      document.querySelectorAll('.client-row-checkbox').forEach(cb => {
+        cb.checked = master.checked;
+      });
+      updateSelectedCountLabel();
+    }
+
+    function updateSelectedCountLabel() {
+      const selected = document.querySelectorAll('.client-row-checkbox:checked').length;
+      document.getElementById('send-selected-count-label').innerText = `${selected} records currently selected in table`;
+    }
+
+    function deleteClient(id) {
+      if (confirm('Are you sure you want to delete this policy record?')) {
+        clients = clients.filter(c => c.id !== id);
+        saveClientsToStorage();
+        renderClientsTable();
+        showToast('Record removed successfully');
+      }
+    }
+
+    function resetClientData() {
+      if (confirm('Reset policy list to original sample data?')) {
+        clients = [...DEFAULT_CLIENTS];
+        saveClientsToStorage();
+        renderClientsTable();
+        showToast('Reset to default sample list');
+      }
+    }
+
+    function clearAllClients() {
+      if (confirm('Clear ALL policy records from current batch?')) {
+        clients = [];
+        saveClientsToStorage();
+        renderClientsTable();
+        showToast('All records cleared');
+      }
+    }
+
+    // ==========================================
+    // EXCEL / CSV FILE IMPORT PARSER (13 EXACT FIELDS)
+    // ==========================================
+    function triggerFileUpload() {
+      document.getElementById('excel-file-input').click();
+    }
+
+    function handleFileSelect(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        try {
+          const data = new Uint8Array(evt.target.result);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const firstSheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[firstSheetName];
+          const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+          if (jsonData.length < 2) {
+            showToast('Uploaded file appears empty or missing rows.', true);
+            return;
+          }
+
+          const headers = jsonData[0].map(h => String(h).toLowerCase().trim());
+          
+          let ownerIdx = headers.findIndex(h => h.includes('owner'));
+          let insuredIdx = headers.findIndex(h => h.includes('insured'));
+          let emailIdx = headers.findIndex(h => h.includes('email') || h.includes('mail'));
+          let policyIdx = headers.findIndex(h => h.includes('policy number') || h.includes('policy no') || h.includes('policy_number'));
+          let planIdx = headers.findIndex(h => h.includes('plan'));
+          let premiumIdx = headers.findIndex(h => h.includes('premium'));
+          let freqIdx = headers.findIndex(h => h.includes('freq') || h.includes('billing'));
+          let dueIdx = headers.findIndex(h => h.includes('due'));
+          let methodIdx = headers.findIndex(h => h.includes('method') || h.includes('payment'));
+          let fundValIdx = headers.findIndex(h => h.includes('fund value') || h.includes('fund_value'));
+          let fundTypeIdx = headers.findIndex(h => h.includes('fund type') || h.includes('fund_type'));
+          let noteIdx = headers.findIndex(h => h.includes('note') || h.includes('update'));
+          let benefitsIdx = headers.findIndex(h => h.includes('benefit') || h.includes('rider'));
+
+          if (ownerIdx === -1) ownerIdx = 0;
+          if (insuredIdx === -1) insuredIdx = ownerIdx;
+          if (emailIdx === -1) emailIdx = 2;
+          if (policyIdx === -1) policyIdx = 3;
+
+          const importedClients = [];
+          for (let i = 1; i < jsonData.length; i++) {
+            const row = jsonData[i];
+            if (!row || row.length === 0) continue;
+
+            const policyOwner = row[ownerIdx] ? String(row[ownerIdx]).trim() : 'Valued Policy Owner';
+            const policyInsured = insuredIdx !== -1 && row[insuredIdx] ? String(row[insuredIdx]).trim() : policyOwner;
+            const email = row[emailIdx] ? String(row[emailIdx]).trim() : 'no-email@domain.com';
+            const policyNo = row[policyIdx] ? String(row[policyIdx]).trim() : 'PRU-0000000';
+            
+            const planType = planIdx !== -1 && row[planIdx] ? String(row[planIdx]).trim() : 'PRUlink assurance account plus';
+            const rawPremium = premiumIdx !== -1 && row[premiumIdx] ? String(row[premiumIdx]).trim() : '15000';
+            const billingFreq = freqIdx !== -1 && row[freqIdx] ? String(row[freqIdx]).trim() : 'Quarterly';
+            const dueDate = dueIdx !== -1 && row[dueIdx] ? String(row[dueIdx]).trim() : 'April 15, 2026';
+            const paymentMethod = methodIdx !== -1 && row[methodIdx] ? String(row[methodIdx]).trim() : 'Auto-Debit (ADA)';
+            
+            const rawFundValue = fundValIdx !== -1 && row[fundValIdx] ? String(row[fundValIdx]).trim() : '180000';
+            const fundType = fundTypeIdx !== -1 && row[fundTypeIdx] ? String(row[fundTypeIdx]).trim() : 'PRUlink Growth Fund';
+            const policyNote = noteIdx !== -1 && row[noteIdx] ? String(row[noteIdx]).trim() : 'In-force. Updated for current quarter.';
+            const policyBenefits = benefitsIdx !== -1 && row[benefitsIdx] ? String(row[benefitsIdx]).trim() : 'Life Insurance Coverage\nCritical Illness Rider';
+
+            if (policyOwner || email) {
+              importedClients.push({
+                id: Date.now().toString() + '_' + i,
+                policyOwner,
+                policyInsured,
+                email,
+                policyNo,
+                planType,
+                premiumAmount: formatCurrency(rawPremium),
+                billingFreq,
+                dueDate,
+                paymentMethod,
+                fundValue: formatCurrency(rawFundValue),
+                fundType,
+                policyNote,
+                policyBenefits,
+                status: 'Pending'
+              });
+            }
+          }
+
+          if (importedClients.length > 0) {
+            clients = importedClients;
+            saveClientsToStorage();
+            renderClientsTable();
+            switchTab('clients');
+            showToast(`Successfully loaded ${importedClients.length} records from Excel!`);
+          } else {
+            showToast('Could not parse valid policy records.', true);
+          }
+
+        } catch (err) {
+          console.error(err);
+          showToast('Error reading Excel/CSV file format.', true);
+        }
+      };
+      reader.readAsArrayBuffer(file);
+      e.target.value = '';
+    }
+
+    const dropZone = document.getElementById('drop-zone');
+    if (dropZone) {
+      ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, preventDefaults, false);
+      });
+      function preventDefaults(e) { e.preventDefault(); e.stopPropagation(); }
+      
+      dropZone.addEventListener('drop', (e) => {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        if (files.length) {
+          document.getElementById('excel-file-input').files = files;
+          handleFileSelect({ target: { files: files } });
+        }
+      });
+    }
+
+    // ==========================================
+    // CLIENT MODAL (ADD / EDIT)
+    // ==========================================
+    function openAddClientModal() {
+      document.getElementById('modal-title').innerText = 'Add New Policy Record';
+      document.getElementById('modal-client-id').value = '';
+      document.getElementById('client-form').reset();
+      document.getElementById('client-modal').classList.remove('hidden');
+    }
+
+    function openEditClientModal(id) {
+      const client = clients.find(c => c.id === id);
+      if (!client) return;
+
+      document.getElementById('modal-title').innerText = 'Edit Policy Record Details';
+      document.getElementById('modal-client-id').value = client.id;
+      document.getElementById('modal-policy-owner').value = client.policyOwner;
+      document.getElementById('modal-policy-insured').value = client.policyInsured;
+      document.getElementById('modal-client-email').value = client.email;
+      document.getElementById('modal-policy-no').value = client.policyNo;
+      document.getElementById('modal-plan-type').value = client.planType || '';
+      document.getElementById('modal-premium-amount').value = client.premiumAmount || '';
+      document.getElementById('modal-billing-freq').value = client.billingFreq || 'Quarterly';
+      document.getElementById('modal-due-date').value = client.dueDate || '';
+      document.getElementById('modal-payment-method').value = client.paymentMethod || '';
+      document.getElementById('modal-fund-value').value = client.fundValue || '';
+      document.getElementById('modal-fund-type').value = client.fundType || '';
+      document.getElementById('modal-policy-note').value = client.policyNote || '';
+      document.getElementById('modal-policy-benefits').value = client.policyBenefits || '';
+      document.getElementById('modal-delivery-status').value = client.status;
+
+      document.getElementById('client-modal').classList.remove('hidden');
+    }
+
+    function closeClientModal() {
+      document.getElementById('client-modal').classList.add('hidden');
+    }
+
+    function saveClientForm(e) {
+      e.preventDefault();
+      const id = document.getElementById('modal-client-id').value;
+      const policyOwner = document.getElementById('modal-policy-owner').value.trim();
+      const policyInsured = document.getElementById('modal-policy-insured').value.trim();
+      const email = document.getElementById('modal-client-email').value.trim();
+      const policyNo = document.getElementById('modal-policy-no').value.trim();
+      const planType = document.getElementById('modal-plan-type').value.trim();
+      
+      const rawPremium = document.getElementById('modal-premium-amount').value.trim();
+      const billingFreq = document.getElementById('modal-billing-freq').value;
+      const dueDate = document.getElementById('modal-due-date').value.trim();
+      const paymentMethod = document.getElementById('modal-payment-method').value.trim();
+      
+      const rawFundValue = document.getElementById('modal-fund-value').value.trim();
+      const fundType = document.getElementById('modal-fund-type').value.trim();
+      const policyNote = document.getElementById('modal-policy-note').value.trim();
+      
+      const premiumAmount = formatCurrency(rawPremium);
+      const fundValue = formatCurrency(rawFundValue);
+      const policyBenefits = document.getElementById('modal-policy-benefits').value.trim();
+      const status = document.getElementById('modal-delivery-status').value;
+
+      if (id) {
+        const index = clients.findIndex(c => c.id === id);
+        if (index !== -1) {
+          clients[index] = { id, policyOwner, policyInsured, email, policyNo, planType, premiumAmount, billingFreq, dueDate, paymentMethod, fundValue, fundType, policyNote, policyBenefits, status };
+          showToast('Policy details updated');
+        }
+      } else {
+        const newClient = {
+          id: Date.now().toString(),
+          policyOwner, policyInsured, email, policyNo, planType, premiumAmount, billingFreq, dueDate, paymentMethod, fundValue, fundType, policyNote, policyBenefits, status
+        };
+        clients.unshift(newClient);
+        showToast('New policy record added');
+      }
+
+      saveClientsToStorage();
+      renderClientsTable();
+      closeClientModal();
+    }
+
+    // ==========================================
+    // TEMPLATE EDITOR & LIVE PREVIEW
+    // ==========================================
+    function insertVariable(tag) {
+      const textarea = document.getElementById('template-body');
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const text = textarea.value;
+
+      textarea.value = text.substring(0, start) + tag + text.substring(end);
+      textarea.focus();
+      textarea.selectionStart = textarea.selectionEnd = start + tag.length;
+
+      saveTemplateToStorage();
+      updateLivePreview();
+    }
+
+    function restoreDefaultTemplate() {
+      if (confirm('Reset subject and body back to default policy template?')) {
+        document.getElementById('template-subject').value = DEFAULT_TEMPLATE_SUBJECT;
+        document.getElementById('template-body').value = DEFAULT_TEMPLATE_BODY;
+        saveTemplateToStorage();
+        updateLivePreview();
+        showToast('Template restored to default');
+      }
+    }
+
+    function populatePreviewClientDropdown() {
+      const select = document.getElementById('preview-client-select');
+      select.innerHTML = '';
+
+      if (clients.length === 0) {
+        select.innerHTML = '<option value="">No records available</option>';
+        return;
+      }
+
+      clients.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.id;
+        opt.innerText = `${c.policyOwner} (${c.policyNo})`;
+        select.appendChild(opt);
+      });
+    }
+
+    function previewClientEmail(clientId) {
+      switchTab('template');
+      const select = document.getElementById('preview-client-select');
+      select.value = clientId;
+      updateLivePreview();
+    }
+
+    function updateLivePreview() {
+      saveTemplateToStorage();
+      updatePdfUI();
+
+      const selectVal = document.getElementById('preview-client-select').value;
+      let targetClient = clients.find(c => c.id === selectVal);
+
+      if (!targetClient && clients.length > 0) {
+        targetClient = clients[0];
+      }
+
+      if (!targetClient) {
+        document.getElementById('preview-to').innerText = 'No Record Selected';
+        document.getElementById('preview-subject').innerText = '-';
+        document.getElementById('preview-body-container').innerHTML = '<p class="text-slate-400">Please add or import policy data first.</p>';
+        return;
+      }
+
+      const rawSubject = document.getElementById('template-subject').value;
+      const rawBody = document.getElementById('template-body').value;
+
+      const formattedSubject = replaceTemplateVars(rawSubject, targetClient);
+      const formattedBody = replaceTemplateVars(rawBody, targetClient);
+
+      document.getElementById('preview-to').innerText = `${targetClient.policyOwner} <${targetClient.email}>`;
+      document.getElementById('preview-subject').innerText = formattedSubject;
+      document.getElementById('preview-body-container').innerHTML = formattedBody;
+    }
+
+    function formatBenefitsAsHtmlList(benefitsStr) {
+      if (!benefitsStr) return '<ul style="margin: 4px 0 0 0; padding-left: 20px; font-size: 13px; color: #333333; line-height: 1.5;"><li style="margin-bottom: 3px;">Standard Policy Benefits</li></ul>';
+      
+      let items = [];
+      if (benefitsStr.includes('\n')) {
+        items = benefitsStr.split('\n');
+      } else if (benefitsStr.includes(',')) {
+        items = benefitsStr.split(',');
+      } else {
+        items = [benefitsStr];
+      }
+
+      let html = '<ul style="margin: 4px 0 0 0; padding-left: 20px; font-size: 13px; color: #333333; line-height: 1.5;">';
+      items.forEach(item => {
+        const trimmed = item.trim();
+        if (trimmed) {
+          html += `<li style="margin-bottom: 3px;">${escapeHtml(trimmed)}</li>`;
+        }
+      });
+      html += '</ul>';
+      return html;
+    }
+
+    function replaceTemplateVars(str, client) {
+      if (!str) return '';
+      const benefitsHtml = formatBenefitsAsHtmlList(client.policyBenefits);
+      return str.replace(/\{\{Policy Owner\}\}/g, client.policyOwner)
+                .replace(/\{\{Policy Insured\}\}/g, client.policyInsured)
+                .replace(/\{\{Email Address\}\}/g, client.email)
+                .replace(/\{\{Policy Number\}\}/g, client.policyNo)
+                .replace(/\{\{Plan Type\}\}/g, client.planType || 'PRUlink assurance account plus')
+                .replace(/\{\{Premium Amount\}\}/g, client.premiumAmount || '')
+                .replace(/\{\{Billing Frequency\}\}/g, client.billingFreq || '')
+                .replace(/\{\{Due Date\}\}/g, client.dueDate || '')
+                .replace(/\{\{Payment Method\}\}/g, client.paymentMethod || '')
+                .replace(/\{\{Fund Value\}\}/g, client.fundValue || '')
+                .replace(/\{\{Fund Type\}\}/g, client.fundType || '')
+                .replace(/\{\{Policy Update Note\}\}/g, client.policyNote || '')
+                .replace(/\{\{Policy Benefits\}\}/g, benefitsHtml);
+    }
+
+    // ==========================================
+    // BATCH DISPATCH SENDING PROCESSOR (MULTI-PDF API)
+    // ==========================================
+    async function sendSingleEmailApi(client) {
+      const subject = replaceTemplateVars(document.getElementById('template-subject').value, client);
+      const htmlBody = replaceTemplateVars(document.getElementById('template-body').value, client);
+
+      if (gasWebAppUrl) {
+        try {
+          // Format attachments payload for backend
+          const attachmentsPayload = (attachedPdfs || []).map(pdf => ({
+            name: pdf.name,
+            base64Data: pdf.base64Data
+          }));
+
+          await fetch(gasWebAppUrl, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'sendEmail',
+              to: client.email,
+              subject: subject,
+              htmlBody: htmlBody,
+              senderName: "Mark Isaac Ison - Pru Life UK",
+              attachments: attachmentsPayload
+            })
+          });
+          return { success: true, mode: 'LIVE_GMAIL' };
+        } catch (e) {
+          return { success: false, error: e.message };
+        }
+      } else {
+        const isSuccess = Math.random() > 0.05;
+        return { success: isSuccess, mode: 'SIMULATION' };
+      }
+    }
+
+    async function startBatchSend() {
+      if (isSendingBatch) return;
+
+      const targetOption = document.querySelector('input[name="send-target-option"]:checked').value;
+      let queue = [];
+
+      if (targetOption === 'PENDING') {
+        queue = clients.filter(c => c.status === 'Pending');
+      } else {
+        const selectedIds = Array.from(document.querySelectorAll('.client-row-checkbox:checked')).map(cb => cb.value);
+        queue = clients.filter(c => selectedIds.includes(c.id));
+      }
+
+      if (queue.length === 0) {
+        showToast('No eligible policy records in queue for sending!', true);
+        return;
+      }
+
+      isSendingBatch = true;
+      shouldStopSending = false;
+      document.getElementById('start-send-btn').classList.add('hidden');
+      document.getElementById('stop-send-btn').classList.remove('hidden');
+
+      const delaySec = parseFloat(document.getElementById('send-delay-slider').value) * 1000;
+      
+      const modeLabel = gasWebAppUrl ? 'LIVE GMAIL API' : 'SIMULATION MODE (Set URL in Gmail Settings ⚙️ for real email send)';
+      const attachInfo = (attachedPdfs && attachedPdfs.length > 0) ? ` [With ${attachedPdfs.length} PDF Attachment(s)]` : '';
+      logToConsole(`[SYS] Starting batch dispatch (${modeLabel})${attachInfo} for ${queue.length} records...`, 'info');
+      
+      let sentCount = 0;
+      let failedCount = 0;
+
+      for (let i = 0; i < queue.length; i++) {
+        if (shouldStopSending) {
+          logToConsole(`[SYS] Dispatch process paused by user.`, 'warn');
+          break;
+        }
+
+        const client = queue[i];
+        logToConsole(`[SENDING] Dispatching policy update to ${client.policyOwner} (${client.email})...`, 'sending');
+
+        const percent = Math.round(((i + 1) / queue.length) * 100);
+        document.getElementById('progress-bar-fill').style.width = `${percent}%`;
+        document.getElementById('progress-percentage-text').innerText = `${percent}%`;
+        document.getElementById('progress-status-text').innerText = `Processing ${i + 1} of ${queue.length}: ${client.policyOwner}`;
+
+        await new Promise(r => setTimeout(r, delaySec));
+
+        const result = await sendSingleEmailApi(client);
+
+        if (result.success) {
+          client.status = 'Sent';
+          sentCount++;
+          const liveTag = result.mode === 'LIVE_GMAIL' ? ' (Delivered via Gmail)' : ' (Simulated Demo)';
+          logToConsole(`[SUCCESS] Email sent to ${client.email} - Policy: ${client.policyNo}${liveTag}`, 'success');
+        } else {
+          client.status = 'Failed';
+          failedCount++;
+          logToConsole(`[ERROR] Failed to send email to ${client.email}: ${result.error || 'Timeout'}`, 'error');
+        }
+
+        saveClientsToStorage();
+        renderClientsTable();
+      }
+
+      isSendingBatch = false;
+      document.getElementById('start-send-btn').classList.remove('hidden');
+      document.getElementById('stop-send-btn').classList.add('hidden');
+
+      document.getElementById('progress-status-text').innerText = 'Batch dispatch completed!';
+      logToConsole(`[COMPLETE] Dispatch summary: ${sentCount} Sent, ${failedCount} Failed.`, 'info');
+      showToast(`Batch completed: ${sentCount} Sent, ${failedCount} Failed.`);
+    }
+
+    function stopBatchSend() {
+      shouldStopSending = true;
+      logToConsole(`[SYS] Requesting process stop...`, 'warn');
+    }
+
+    function logToConsole(message, type = 'info') {
+      const consoleBox = document.getElementById('console-log-box');
+      const div = document.createElement('div');
+      const timeStr = new Date().toLocaleTimeString();
+
+      let colorClass = 'text-slate-300';
+      if (type === 'success') colorClass = 'text-emerald-400 font-semibold';
+      if (type === 'error') colorClass = 'text-rose-400 font-semibold';
+      if (type === 'warn') colorClass = 'text-amber-400';
+      if (type === 'sending') colorClass = 'text-blue-400';
+
+      div.className = `${colorClass} py-0.5`;
+      div.innerText = `[${timeStr}] ${message}`;
+
+      consoleBox.appendChild(div);
+      consoleBox.scrollTop = consoleBox.scrollHeight;
+    }
+
+    function clearConsoleLogs() {
+      document.getElementById('console-log-box').innerHTML = '<div class="text-slate-500">// Console logs cleared.</div>';
+    }
+
+    function exportSendingReportCSV() {
+      if (clients.length === 0) {
+        showToast('No policy data to export!', true);
+        return;
+      }
+
+      let csvContent = "data:text/csv;charset=utf-8,";
+      csvContent += "Policy Owner,Policy Insured,Email Address,Policy Number,Plan Type,Premium Amount,Billing Frequency,Due Date,Payment Method,Fund Value,Fund Type,Policy Update Note,Delivery Status\n";
+
+      clients.forEach(c => {
+        const row = `"${c.policyOwner}","${c.policyInsured}","${c.email}","${c.policyNo}","${c.planType || ''}","${c.premiumAmount || ''}","${c.billingFreq || ''}","${c.dueDate || ''}","${c.paymentMethod || ''}","${c.fundValue || ''}","${c.fundType || ''}","${(c.policyNote || '').replace(/"/g, '""')}","${c.status}"`;
+        csvContent += row + "\n";
+      });
+
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", `Policy_Email_Report.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      showToast('CSV Report downloaded!');
+    }
+
+    // ==========================================
+    // GOOGLE APPS SCRIPT CODE GENERATOR (MULTI-PDF)
+    // ==========================================
+    const GAS_CODE_TEXT = `/**
+ * Automated Policy Email Sender & Web API Engine with Multiple PDF Attachments Support
+ */
+
+function doPost(e) {
+  try {
+    var data = JSON.parse(e.postData.contents);
+    if (data.action === "sendEmail") {
+      var options = {
+        htmlBody: data.htmlBody,
+        name: data.senderName || "Mark Isaac Ison - Pru Life UK",
+        attachments: []
+      };
+
+      // Handle Multiple PDF Attachments array
+      if (data.attachments && data.attachments.length > 0) {
+        for (var i = 0; i < data.attachments.length; i++) {
+          var item = data.attachments[i];
+          if (item.base64Data && item.name) {
+            var base64Content = item.base64Data.split(",")[1] || item.base64Data;
+            var decodedBytes = Utilities.base64Decode(base64Content);
+            var pdfBlob = Utilities.newBlob(decodedBytes, MimeType.PDF, item.name);
+            options.attachments.push(pdfBlob);
+          }
+        }
+      }
+
+      GmailApp.sendEmail(data.to, data.subject, "", options);
+
+      return ContentService.createTextOutput(JSON.stringify({ success: true, message: "Email sent with " + options.attachments.length + " attachment(s)" }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    return ContentService.createTextOutput(JSON.stringify({ success: false, message: "Invalid action" }))
+        .setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.toString() }))
+        .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+function doGet(e) {
+  return ContentService.createTextOutput("Google Apps Script Multi-PDF Engine Active!")
+    .setMimeType(ContentService.MimeType.TEXT);
+}`;
+
+    function renderGasCode() {
+      document.getElementById('gas-code-block').innerText = GAS_CODE_TEXT;
+    }
+
+    function copyGasCode() {
+      const textToCopy = GAS_CODE_TEXT;
+      
+      const tempTextArea = document.createElement('textarea');
+      tempTextArea.value = textToCopy;
+      document.body.appendChild(tempTextArea);
+      tempTextArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(tempTextArea);
+
+      const copyBtnText = document.getElementById('copy-btn-text');
+      copyBtnText.innerText = 'Copied to Clipboard!';
+      showToast('Google Apps Script code copied!');
+      
+      setTimeout(() => {
+        copyBtnText.innerText = 'Copy Script Code';
+      }, 2500);
+    }
+
+    // ==========================================
+    // UTILITY FUNCTIONS
+    // ==========================================
+    function escapeHtml(text) {
+      if (!text) return '';
+      return String(text)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function showToast(message, isError = false) {
+      const toast = document.getElementById('toast-msg');
+      const icon = document.getElementById('toast-icon');
+      const text = document.getElementById('toast-text');
+
+      text.innerText = message;
+
+      if (isError) {
+        icon.className = 'fa-solid fa-circle-xmark text-rose-400 text-base';
+      } else {
+        icon.className = 'fa-solid fa-circle-check text-emerald-400 text-base';
+      }
+
+      toast.classList.remove('translate-y-20', 'opacity-0');
+      
+      setTimeout(() => {
+        toast.classList.add('translate-y-20', 'opacity-0');
+      }, 3000);
+    }
+  </script>
+</body>
+</html>
